@@ -33,9 +33,9 @@ module tt_um_uwasic_onboarding_eva_siao (
   spi_peripheral spi_peripheral_inst (
     .clk(clk),
     .rst_n(rst_n),
-    .copi(uio_in[1]),
-    .ncs(uio_in[2]),  
-    .sclk(uio_in[0]), 
+    .copi(ui_in[1]),
+    .ncs(ui_in[2]),  
+    .sclk(ui_in[0]), 
     .en_reg_out_7_0(en_reg_out_7_0),
     .en_reg_out_15_8(en_reg_out_15_8),
     .en_reg_pwm_7_0(en_reg_pwm_7_0),
