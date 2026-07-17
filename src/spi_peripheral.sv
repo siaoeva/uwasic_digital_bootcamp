@@ -59,9 +59,8 @@ module spi_peripheral(
             ncs_sync_prev <= ncs_sync_1;
         end
     end
-    logic sclk_posedge, sclk_negedge;
+    logic sclk_posedge;
     assign sclk_posedge = sclk_sync_1 & ~sclk_sync_prev;
-    assign sclk_negedge = ~sclk_sync_1 & sclk_sync_prev;
 
     logic ncs_posedge; // Detect rising edge of ncs (chip select) (end transaction)
     assign ncs_posedge = ncs_sync_1 & ~ncs_sync_prev;
@@ -70,20 +69,15 @@ module spi_peripheral(
     logic [4:0] bit_count; // count from 0 to 16
     logic [15:0] shift_reg; // 16-bit shift register
     
-    logic [15:0] rx_data; // Completed received data
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             bit_count <= 5'd0;
             shift_reg <= 16'd0;
-            rx_data <= 16'd0;
         end else if (ncs_posedge) begin // Reset on ncs rising edge (when chip select goes inactive)
             bit_count <= 5'd0;
         end else if (sclk_posedge && !ncs_sync_1) begin // Only shift on sclk posedge when ncs is low
     
-            if (bit_count == 5'd15) begin
-                rx_data <= {shift_reg[14:0], copi_sync_1};
-            end
 
             shift_reg <= {shift_reg[14:0], copi_sync_1}; // Shift in the new bit
             if (bit_count < 5'd16) begin
@@ -114,16 +108,16 @@ module spi_peripheral(
         if (!rst_n) begin
             en_reg_out_7_0 <= 8'd0;
             en_reg_out_15_8 <= 8'd0;
-            en_reg_pwm_7_0 <= 8'd0;
+            en_reg_pwm_7_0 <= 8'd0; 
             en_reg_pwm_15_8 <= 8'd0;
             pwm_duty_cycle <= 8'd0;
-        end else if (rx_data[15] == 1'b1 && rx_data[14:8] <= MAX_ADDRESS && transaction_ready == 1'b1) begin // Write if write bit 1, destination addr less than max, transaction ready
-            case (rx_data[14:8]) 
-                7'h0: en_reg_out_7_0 <= rx_data[7:0];
-                7'h1: en_reg_out_15_8 <= rx_data[7:0];
-                7'h2: en_reg_pwm_7_0 <= rx_data[7:0];
-                7'h3: en_reg_pwm_15_8 <= rx_data[7:0];
-                7'h4: pwm_duty_cycle <= rx_data[7:0];
+        end else if (shift_reg[15] == 1'b1 && shift_reg[14:8] <= MAX_ADDRESS && transaction_ready == 1'b1) begin // Write if write bit 1, destination addr less than max, transaction ready
+            case (shift_reg[14:8]) 
+                7'h0: en_reg_out_7_0 <= shift_reg[7:0];
+                7'h1: en_reg_out_15_8 <= shift_reg[7:0];
+                7'h2: en_reg_pwm_7_0 <= shift_reg[7:0];
+                7'h3: en_reg_pwm_15_8 <= shift_reg[7:0];
+                7'h4: pwm_duty_cycle <= shift_reg[7:0];
                 default: ;
             endcase
         end
